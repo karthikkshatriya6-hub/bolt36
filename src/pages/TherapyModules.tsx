@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   Brain, Heart, Moon, Headphones, Palette, Gamepad2,
   BookOpen, Music, Target, Users, Clock, Star,
-  Play, Pause, RotateCcw, CheckCircle, Lock, ArrowLeft
+  Play, Pause, RotateCcw, CheckCircle, Lock, ArrowLeft, Eye, Shield
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { updateStreak } from '../utils/streakManager';
+import { getAllTherapies } from '../utils/therapyStorage';
+import { Therapy } from '../types/therapy';
 
 function TherapyModules() {
   const { user } = useAuth();
@@ -18,19 +20,23 @@ function TherapyModules() {
   const [completedModules, setCompletedModules] = useState<string[]>([]);
   const [todaysDate, setTodaysDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [userProgress, setUserProgress] = useState<any>(null);
+  const [therapies, setTherapies] = useState<Therapy[]>([]);
 
   useEffect(() => {
-    // Load user progress from localStorage
+    loadTherapies();
+    window.addEventListener('therapies-updated', loadTherapies);
+    return () => window.removeEventListener('therapies-updated', loadTherapies);
+  }, []);
+
+  useEffect(() => {
     const savedProgress = localStorage.getItem('mindcare_user_progress');
     if (savedProgress) {
       setUserProgress(JSON.parse(savedProgress));
-      
-      // Check for daily reset
+
       const currentDate = new Date().toISOString().split('T')[0];
       const progress = JSON.parse(savedProgress);
-      
+
       if (!progress.lastResetDate || progress.lastResetDate !== currentDate) {
-        // Reset daily completions for new day
         const resetProgress = {
           ...progress,
           lastResetDate: currentDate,
@@ -43,12 +49,10 @@ function TherapyModules() {
         setUserProgress(resetProgress);
         setCompletedModules([]);
       } else {
-        // Load today's completions
         const todaysCompletions = progress.dailyCompletions?.[currentDate] || [];
         setCompletedModules(todaysCompletions);
       }
     } else {
-      // Initialize user progress if it doesn't exist
       const initialProgress = {
         lastResetDate: todaysDate,
         dailyCompletions: { [todaysDate]: [] }
@@ -57,6 +61,10 @@ function TherapyModules() {
       setUserProgress(initialProgress);
     }
   }, []);
+
+  const loadTherapies = () => {
+    setTherapies(getAllTherapies().filter(t => t.status === 'Active'));
+  };
 
   const updateTherapyProgress = (moduleId: string) => {
     const currentDate = new Date().toISOString().split('T')[0];
@@ -103,131 +111,62 @@ function TherapyModules() {
     }
   };
 
-  const therapyModules = [
-    {
-      id: 1,
-      moduleId: 'cbt',
-      title: 'CBT Thought Records',
-      description: 'Cognitive Behavioral Therapy techniques with guided prompts',
-      icon: BookOpen,
-      color: 'from-purple-500 to-pink-500',
-      duration: '15-20 min',
-      difficulty: 'Beginner',
-      sessions: 12,
-      route: '/therapy-modules/cbt'
-    },
-    {
-      id: 2,
-      moduleId: 'mindfulness',
-      title: 'Mindfulness & Breathing',
-      description: 'Mindfulness and relaxation exercises with audio guidance',
-      icon: Brain,
-      color: 'from-blue-500 to-cyan-500',
-      duration: '10-30 min',
-      difficulty: 'Beginner',
-      sessions: 15,
-      route: '/therapy-modules/mindfulness'
-    },
-    {
-      id: 3,
-      moduleId: 'stress',
-      title: 'Stress Management',
-      description: 'Learn effective coping strategies for daily stress',
-      icon: Target,
-      color: 'from-teal-500 to-green-500',
-      duration: '15-20 min',
-      difficulty: 'Beginner',
-      sessions: 8,
-      route: '/therapy-modules/stress'
-    },
-    {
-      id: 4,
-      moduleId: 'gratitude',
-      title: 'Gratitude Journal',
-      description: 'Daily gratitude practice with streak tracking',
-      icon: Heart,
-      color: 'from-green-500 to-teal-500',
-      duration: '5-10 min',
-      difficulty: 'Beginner',
-      sessions: 21,
-      route: '/therapy-modules/gratitude'
-    },
-    {
-      id: 5,
-      moduleId: 'music',
-      title: 'Relaxation Music',
-      description: 'Curated audio library for relaxation and focus',
-      icon: Music,
-      color: 'from-purple-500 to-blue-500',
-      duration: 'Variable',
-      difficulty: 'Beginner',
-      sessions: 20,
-      route: '/therapy-modules/music'
-    },
-    {
-      id: 6,
-      moduleId: 'tetris',
-      title: 'Tetris Therapy',
-      description: 'Gamified stress relief and cognitive enhancement',
-      icon: Gamepad2,
-      color: 'from-cyan-500 to-blue-500',
-      duration: '10-15 min',
-      difficulty: 'Beginner',
-      sessions: 12,
-      route: '/therapy-modules/tetris'
-    },
-    {
-      id: 7,
-      moduleId: 'art',
-      title: 'Art & Color Therapy',
-      description: 'Creative expression through digital art and coloring',
-      icon: Palette,
-      color: 'from-pink-500 to-purple-500',
-      duration: '20-30 min',
-      difficulty: 'Beginner',
-      sessions: 10,
-      route: '/therapy-modules/art'
-    },
-    {
-      id: 8,
-      moduleId: 'exposure',
-      title: 'Exposure Therapy',
-      description: 'Gradual exposure techniques for anxiety and phobias',
-      icon: Target,
-      color: 'from-orange-500 to-red-500',
-      duration: '30-45 min',
-      difficulty: 'Advanced',
-      sessions: 12,
-      route: '/therapy-modules/exposure'
-    },
-    {
-      id: 9,
-      moduleId: 'video',
-      title: 'Video Therapy',
-      description: 'Guided video sessions with therapeutic content',
-      icon: Play,
-      color: 'from-blue-500 to-indigo-500',
-      duration: '20-40 min',
-      difficulty: 'Intermediate',
-      sessions: 16,
-      route: '/therapy-modules/video'
-    },
-    {
-      id: 10,
-      moduleId: 'act',
-      title: 'Acceptance & Commitment Therapy',
-      description: 'ACT principles for psychological flexibility',
-      icon: Star,
-      color: 'from-teal-500 to-cyan-500',
-      duration: '25-35 min',
-      difficulty: 'Intermediate',
-      sessions: 14,
-      route: '/therapy-modules/act'
-    }
-  ];
+  const routeMap: { [key: string]: string } = {
+    'cbt': '/therapy-modules/cbt',
+    'mindfulness': '/therapy-modules/mindfulness',
+    'stress': '/therapy-modules/stress',
+    'gratitude': '/therapy-modules/gratitude',
+    'music': '/therapy-modules/music',
+    'tetris': '/therapy-modules/tetris',
+    'art': '/therapy-modules/art',
+    'exposure': '/therapy-modules/exposure',
+    'video': '/therapy-modules/video',
+    'act': '/therapy-modules/act'
+  };
+
+  const getRouteForTherapy = (title: string): string => {
+    const normalized = title.toLowerCase()
+      .replace(/\s+&\s+/g, '-')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+
+    const titleKey = title.toLowerCase();
+    if (titleKey.includes('cbt')) return '/therapy-modules/cbt';
+    if (titleKey.includes('mindfulness')) return '/therapy-modules/mindfulness';
+    if (titleKey.includes('stress')) return '/therapy-modules/stress';
+    if (titleKey.includes('gratitude')) return '/therapy-modules/gratitude';
+    if (titleKey.includes('music')) return '/therapy-modules/music';
+    if (titleKey.includes('tetris')) return '/therapy-modules/tetris';
+    if (titleKey.includes('art')) return '/therapy-modules/art';
+    if (titleKey.includes('exposure')) return '/therapy-modules/exposure';
+    if (titleKey.includes('video')) return '/therapy-modules/video';
+    if (titleKey.includes('act') || titleKey.includes('acceptance')) return '/therapy-modules/act';
+
+    return `/therapy-modules/${normalized}`;
+  };
+
+  const getIconComponent = (iconName: string) => {
+    const iconMap: { [key: string]: any } = {
+      Brain, Heart, Moon, Music, Palette, Gamepad2, BookOpen,
+      Target, Users, Shield, Play, Star, Eye
+    };
+    return iconMap[iconName] || Brain;
+  };
+
+  const therapyModules = therapies.map((therapy) => ({
+    id: therapy.id,
+    moduleId: therapy.id,
+    title: therapy.title,
+    description: therapy.description,
+    icon: getIconComponent(therapy.icon),
+    color: therapy.color,
+    duration: therapy.duration,
+    difficulty: therapy.difficulty,
+    sessions: therapy.sessions,
+    route: getRouteForTherapy(therapy.title)
+  }));
 
   const handleStartModule = (module: any) => {
-    // Update progress when starting a therapy
     updateTherapyProgress(module.moduleId);
     navigate(module.route);
   };
