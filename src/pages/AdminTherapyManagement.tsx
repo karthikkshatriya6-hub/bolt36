@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Brain, Heart, Moon, Music, Palette, Gamepad2, BookOpen,
-  Target, Users, Shield, Play, Star, Plus, Edit, Trash2,
-  Save, X, Search, Filter, Eye, CheckCircle, XCircle
-} from 'lucide-react';
+import { Brain, Heart, Moon, Music, Palette, Gamepad2, BookOpen, Target, Users, Shield, Play, Star, Plus, CreditCard as Edit, Trash2, Save, X, Search, Filter, Eye, CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Therapy, TherapyFormData } from '../types/therapy';
 import {
